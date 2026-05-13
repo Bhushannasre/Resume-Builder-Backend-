@@ -38,27 +38,27 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        // Check if user already exists
-        const user = await User.findOne({email})
-        if(!user){
-            return res.status(400).json({message:'Invalid email or password'})
-        }
-       //compare password
-       if(!user.comparePassword(password)){
-        return res.status(400).json({message:'Invalid email or password'})
-       }
-       
-        //return success message and token
-        const token = generateToken(user._id);
-        user.password = undefined; // Exclude password from response
 
-       return res.status(200).json({message: "Login Successfully ", token, user})
-    
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email or password' })
+        }
+
+        // ✅ Use bcrypt.compare — it's async and needs await
+        const isMatch = await bcrypt.compare(password, user.password)
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid email or password' })
+        }
+
+        const token = generateToken(user._id);
+        user.password = undefined;
+
+        return res.status(200).json({ message: "Login Successfully", token, user })
+
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 }
-
 //controller for getting user by id
 //GET: /api/users/data
 export const getUserById = async (req, res) => {
