@@ -1,6 +1,5 @@
 import Resume from "../models/resume.js";
 import imageKit from "../configs/imageKit.js";
-import fs from "fs";
 
 // POST: /api/resumes/create
 export const createResume = async (req, res) => {
@@ -76,18 +75,31 @@ export const updateResume = async (req, res) => {
         const { resumeId, resumeData, removeBackground } = req.body;
         const image = req.file;
 
+        if (!resumeId) {
+            return res.status(400).json({ message: "resumeId is required" });
+        }
+        if (!resumeData) {
+            return res.status(400).json({ message: "resumeData is required" });
+        }
+
         let resumeDataCopy;
-      if(typeof resumeData === 'string'){
-        resumeDataCopy = await JSON.parse(resumeData)
-      }
-      else{
-        resumeDataCopy = structuredClone(resumeData)
-      }
+        try {
+            resumeDataCopy = JSON.parse(resumeData);
+        } catch (e) {
+            return res.status(400).json({ message: "Invalid resumeData JSON" });
+        }
+
+        // Strip Mongoose internals that cause update errors
+        delete resumeDataCopy._id;
+        delete resumeDataCopy.__v;
+        delete resumeDataCopy.userId;
+        delete resumeDataCopy.createdAt;
+        delete resumeDataCopy.updatedAt;
 
         if (image) {
-            const imageBufferData = fs.readFileSync(image.path);
-            const response = await imageKit.upload({
-                file: imageBufferData,
+            const { toFile } = await import("@imagekit/nodejs");
+            const response = await imageKit.files.upload({
+                file: await toFile(image.buffer, "resume.png", { type: image.mimetype }),
                 fileName: "resume.png",
                 folder: "user-resumes",
                 transformation: {
@@ -101,11 +113,17 @@ export const updateResume = async (req, res) => {
 
         const resume = await Resume.findOneAndUpdate(
             { userId, _id: resumeId },
-            resumeDataCopy,
+            { $set: resumeDataCopy },
             { new: true }
         );
+
+        if (!resume) {
+            return res.status(404).json({ message: "Resume not found" });
+        }
+
         return res.status(200).json({ message: "Saved successfully", resume });
     } catch (error) {
+        console.error("updateResume error:", error.message);
         return res.status(400).json({ message: error.message });
     }
 };

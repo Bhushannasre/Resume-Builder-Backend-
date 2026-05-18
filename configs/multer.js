@@ -2,7 +2,8 @@ import multer from "multer";
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (req, file, cb) => {
+// ── For PDF uploads (resume parsing) ────────────────────────────────────────
+const pdfFilter = (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
         cb(null, true);
     } else {
@@ -10,10 +11,26 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-const upload = multer({
+export const uploadPdf = multer({
     storage,
-    fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    fileFilter: pdfFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-export default upload;
+// ── For image uploads (profile picture) ─────────────────────────────────────
+const imageFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+    } else {
+        cb(new Error("Only image files are allowed"), false);
+    }
+};
+
+export const uploadImage = multer({
+    storage,
+    fileFilter: imageFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
+
+// ── Default export (backwards compat) ───────────────────────────────────────
+export default uploadPdf;
