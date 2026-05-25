@@ -7,14 +7,42 @@ import userRouter from './routes/userRoutes.js';
 import resumeRouter from './routes/resumeRoutes.js';
 import aiRouter from './routes/aiRoutes.js';
 
-const app = express(); // 1. Define 'app' first
+const app = express( );
 
-// 2. Configure CORS correctly
+// Dynamic CORS Configuration
+const allowedOrigins = [
+    'https://ai-resume-builder-qmq3.vercel.app',
+    'http://localhost:5173'
+];
+
+// Add Vercel preview deployment URLs dynamically
+if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'preview' ) {
+    allowedOrigins.push(/https:\/\/ai-resume-builder-qmq3(-[a-zA-Z0-9]+ )?\.vercel\.app$/);
+}
+
 app.use(cors({
-    // Remove the trailing slash from the Vercel URL
-    origin: ['https://ai-resume-builder-qmq3.vercel.app', 'http://localhost:5173'],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Check if the origin is in our allowed list or matches a regex
+        const isAllowed = allowedOrigins.some(allowedOrigin => {
+            if (typeof allowedOrigin === 'string') {
+                return allowedOrigin === origin;
+            } else if (allowedOrigin instanceof RegExp) {
+                return allowedOrigin.test(origin);
+            }
+            return false;
+        });
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
-} ));
+}));
 
 app.use(express.json());
 
