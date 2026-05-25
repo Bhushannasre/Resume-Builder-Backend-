@@ -7,52 +7,51 @@ import userRouter from './routes/userRoutes.js';
 import resumeRouter from './routes/resumeRoutes.js';
 import aiRouter from './routes/aiRoutes.js';
 
-const app = express( );
+const app = express();
 
-// Dynamic CORS Configuration
+// Allowed origins — covers production, all Vercel previews, and local dev
 const allowedOrigins = [
-    'https://ai-resume-builder-qmq3.vercel.app',
-    'http://localhost:5173'
+  'https://ai-resume-builder-qmq3.vercel.app',
+  'https://ai-resume-builder-qmq3-kx82kb8za-bhushan-nasres-projects.vercel.app',
+  /^https:\/\/ai-resume-builder-qmq3[a-zA-Z0-9-]*\.vercel\.app$/,
+  'http://localhost:5173',
+  'http://localhost:3000',
 ];
 
-// Add Vercel preview deployment URLs dynamically
-if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'preview' ) {
-    allowedOrigins.push(/https:\/\/ai-resume-builder-qmq3(-[a-zA-Z0-9]+ )?\.vercel\.app$/);
-}
-
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
 
-        // Check if the origin is in our allowed list or matches a regex
-        const isAllowed = allowedOrigins.some(allowedOrigin => {
-            if (typeof allowedOrigin === 'string') {
-                return allowedOrigin === origin;
-            } else if (allowedOrigin instanceof RegExp) {
-                return allowedOrigin.test(origin);
-            }
-            return false;
-        });
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') return allowed === origin;
+      if (allowed instanceof RegExp) return allowed.test(origin);
+      return false;
+    });
 
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`); // helpful for debugging
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// Handle preflight requests for all routes
+app.options('*', cors());
 
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// Database connection
 await connectDB();
 
 app.get('/', (req, res) => {
-    res.send('Server is live....');
+  res.send('Server is live....');
 });
 
 app.use('/api/users', userRouter);
@@ -60,5 +59,5 @@ app.use('/api/resumes', resumeRouter);
 app.use('/api/ai', aiRouter);
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
