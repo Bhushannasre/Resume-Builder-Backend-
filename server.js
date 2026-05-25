@@ -1,18 +1,21 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 
 import connectDB from './configs/db.js';
 import userRouter from './routes/userRoutes.js';
 import resumeRouter from './routes/resumeRoutes.js';
 import aiRouter from './routes/aiRoutes.js';
 
-dotenv.config();
+const app = express(); // 1. Define 'app' first
 
-const app = express();
+// 2. Configure CORS correctly
+app.use(cors({
+    // Remove the trailing slash from the Vercel URL
+    origin: ['https://ai-resume-builder-qmq3.vercel.app', 'http://localhost:5173'],
+    credentials: true
+} ));
 
-app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
