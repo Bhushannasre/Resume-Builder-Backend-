@@ -6,6 +6,7 @@ import connectDB from './configs/db.js';
 import userRouter from './routes/userRoutes.js';
 import resumeRouter from './routes/resumeRoutes.js';
 import aiRouter from './routes/aiRoutes.js';
+import ai from './configs/ai.js';
 
 const app = express();
 
@@ -32,7 +33,6 @@ app.use((req, res, next) => {
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
     if (!origin) return callback(null, true);
 
     const isAllowed = allowedOrigins.some(allowed => {
@@ -62,6 +62,30 @@ await connectDB();
 app.get('/', (req, res) => {
   res.send('Server is live....');
 });
+
+// ── TEMPORARY DEBUG ROUTE — remove after testing ──────────────────────────
+app.get('/test-ai', async (req, res) => {
+  try {
+    const response = await ai.chat.completions.create({
+      model: process.env.OPENAI_MODEL,
+      messages: [{ role: "user", content: "Say hello" }],
+    });
+    res.json({
+      success: true,
+      model: process.env.OPENAI_MODEL,
+      reply: response.choices[0].message.content,
+    });
+  } catch (err) {
+    res.json({
+      success: false,
+      model: process.env.OPENAI_MODEL,
+      error: err.message,
+      status: err.status,
+      details: err?.error ?? err?.response?.data ?? null,
+    });
+  }
+});
+// ──────────────────────────────────────────────────────────────────────────
 
 app.use('/api/users', userRouter);
 app.use('/api/resumes', resumeRouter);
