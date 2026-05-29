@@ -12,8 +12,7 @@ const app = express();
 // Allowed origins — covers production, all Vercel previews, and local dev
 const allowedOrigins = [
   'https://ai-resume-builder-qmq3.vercel.app',
-  'https://ai-resume-builder-qmq3-kx82kb8za-bhushan-nasres-projects.vercel.app',
-  'https://ai-resume-builder-nine-steel.vercel.app/',
+  'https://ai-resume-builder-nine-steel.vercel.app',
   /^https:\/\/ai-resume-builder-qmq3[a-zA-Z0-9-]*\.vercel\.app$/,
   'http://localhost:5173',
   'http://localhost:3000',
